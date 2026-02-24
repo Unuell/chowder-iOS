@@ -27,6 +27,7 @@ jobs:
             -configuration Release \
             -sdk iphoneos \
             -destination 'generic/platform=iOS' \
+            -derivedDataPath build/DerivedData \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             build
@@ -35,9 +36,10 @@ jobs:
         working-directory: Chowder
         run: |
           set -euo pipefail
-          APP_PATH=$(find "$PWD" -type d -path "*/Build/Products/Release-iphoneos/Chowder.app" | head -n 1)
-          if [ -z "${APP_PATH}" ]; then
-            echo "Chowder.app not found"
+          APP_PATH="$PWD/build/DerivedData/Build/Products/Release-iphoneos/Chowder.app"
+          if [ ! -d "${APP_PATH}" ]; then
+            echo "Chowder.app not found at ${APP_PATH}"
+            find "$PWD/build/DerivedData" -maxdepth 5 -type d | sed -n '1,120p' || true
             exit 1
           fi
 
