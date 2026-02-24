@@ -1,3 +1,4 @@
+#if canImport(FoundationModels)
 import FoundationModels
 
 /// Generates short task titles from user messages using Apple's on-device Foundation Models.
@@ -150,3 +151,16 @@ actor TaskSummaryService {
         }
     }
 }
+#else
+import Foundation
+
+/// Fallback implementation when FoundationModels is unavailable on the build host/SDK.
+actor TaskSummaryService {
+    static let shared = TaskSummaryService()
+    private init() {}
+
+    func generateTitle(for messages: [String]) async -> String? { nil }
+    func convertToPastTense(_ intent: String) async -> String? { nil }
+    func generateCompletionMessage(for taskTitle: String) async -> String? { nil }
+}
+#endif
