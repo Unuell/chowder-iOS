@@ -1,0 +1,54 @@
+name: Build unsigned Chowder IPA
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-ipa:
+    runs-on: macos-15
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Xcode version
+        run: xcodebuild -version
+
+      - name: Build iOS app (no codesign)
+        working-directory: Chowder
+        run: |
+          set -euo pipefail
+          xcodebuild \
+            -project Chowder.xcodeproj \
+            -scheme Chowder \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            build
+
+      - name: Package IPA
+        working-directory: Chowder
+        run: |
+          set -euo pipefail
+          APP_PATH=$(find "$PWD" -type d -path "*/Build/Products/Release-iphoneos/Chowder.app" | head -n 1)
+          if [ -z "${APP_PATH}" ]; then
+            echo "Chowder.app not found"
+            exit 1
+          fi
+
+          rm -rf Payload Chowder-unsigned.ipa
+          mkdir -p Payload
+          cp -R "$APP_PATH" Payload/
+          /usr/bin/zip -r Chowder-unsigned.ipa Payload
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Chowder-unsigned-ipa
+          path: Chowder/Chowder-unsigned.ipa
+          if-no-files-found: error
